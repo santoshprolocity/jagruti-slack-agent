@@ -1,94 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jagruti Slack Agent • Complete Implementation Plan</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
-        body { font-family: 'Inter', system_ui, sans-serif; }
-        .heading { font-family: 'Space Grotesk', sans-serif; }
-        .nav-link { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .nav-link:hover { background-color: #f1f5f9; color: #0f172a; }
-        pre { background: #0f172a; border-radius: 12px; padding: 1.25rem; font-size: 0.95rem; overflow-x: auto; }
-        .phase { scroll-margin-top: 5rem; }
-        .status { background: #ecfdf5; color: #10b981; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jagruti Slack Agent — Implementation Plan</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fafaf8;--surface:#fff;--text:#1a1a2e;--muted:#6b7280;
+  --accent:#0d7377;--accent-light:#e6f4f4;--warn:#d97706;--warn-light:#fef3c7;
+  --code-bg:#f3f1ec;--border:#ddd8cd;--radius:6px;
+  --font:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
+  --mono:"SF Mono",Consolas,"Liberation Mono",Menlo,monospace;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--text);background:var(--bg);line-height:1.65;-webkit-font-smoothing:antialiased}
+
+/* --- HERO --- */
+.hero{background:var(--text);color:var(--bg);padding:3.5rem 2rem 2.5rem;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--accent)}
+.hero-badge{display:inline-block;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);padding:.25rem .7rem;border-radius:20px;margin-bottom:1rem}
+.hero h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;letter-spacing:-.02em;line-height:1.15;max-width:720px}
+.hero p{margin-top:.75rem;color:#a8a8b3;font-size:.95rem;max-width:600px}
+.hero-meta{display:flex;gap:1.5rem;margin-top:1.25rem;font-size:.8rem;color:#888}
+.hero-meta span{display:flex;align-items:center;gap:.35rem}
+
+/* --- LAYOUT --- */
+.container{max-width:820px;margin:0 auto;padding:2rem 1.25rem 4rem}
+
+/* --- HOW TO READ --- */
+.callout{background:var(--warn-light);border-left:3px solid var(--warn);padding:1rem 1.25rem;border-radius:0 var(--radius) var(--radius) 0;margin-bottom:2.5rem;font-size:.88rem}
+.callout strong{color:var(--warn)}
+.callout ol{margin:.5rem 0 0 1.2rem}
+.callout li{margin:.25rem 0}
+
+/* --- OVERVIEW BOX --- */
+.overview{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:2.5rem}
+.overview h2{font-size:1.1rem;font-weight:700;margin-bottom:.75rem;color:var(--accent)}
+.overview p{font-size:.9rem;margin-bottom:.6rem}
+
+/* --- FEATURES GRID --- */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem;margin:1rem 0 1.5rem}
+.feat{background:var(--accent-light);border-radius:var(--radius);padding:.85rem 1rem;font-size:.85rem}
+.feat strong{display:block;font-size:.8rem;color:var(--accent);margin-bottom:.2rem}
+
+/* --- ARCHITECTURE --- */
+.arch{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0}
+.arch span{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:.3rem .65rem;font-size:.78rem;font-family:var(--mono);white-space:nowrap}
+
+/* --- PHASE CARDS --- */
+.phase{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1rem;overflow:hidden}
+.phase summary{cursor:pointer;padding:1rem 1.25rem;display:flex;align-items:center;gap:.75rem;font-weight:600;font-size:.95rem;list-style:none;user-select:none;transition:background .15s}
+.phase summary:hover{background:var(--accent-light)}
+.phase summary::-webkit-details-marker{display:none}
+.phase-num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;font-size:.75rem;font-weight:700;flex-shrink:0}
+.phase[open] summary{border-bottom:1px solid var(--border)}
+.phase-body{padding:1.25rem}
+.phase-body h3{font-size:.95rem;font-weight:700;margin:1.25rem 0 .4rem;color:var(--text)}
+.phase-body h3:first-child{margin-top:0}
+.phase-body p{font-size:.88rem;margin-bottom:.6rem}
+.phase-body ul,.phase-body ol{font-size:.88rem;margin:.4rem 0 .6rem 1.2rem}
+.phase-body li{margin:.25rem 0}
+
+/* --- ARROW on summary --- */
+.phase summary::after{content:"▸";margin-left:auto;font-size:.8rem;color:var(--muted);transition:transform .2s}
+.phase[open] summary::after{transform:rotate(90deg)}
+
+/* --- CODE BLOCKS --- */
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;overflow-x:auto;font-family:var(--mono);font-size:.78rem;line-height:1.6;margin:.6rem 0 .8rem;tab-size:4}
+code{font-family:var(--mono);font-size:.82rem}
+p code,.phase-body li code{background:var(--code-bg);padding:.1rem .35rem;border-radius:3px;font-size:.8rem}
+
+/* --- WHY BOXES --- */
+.why{background:#f6faf6;border-left:3px solid var(--accent);padding:.6rem .9rem;border-radius:0 var(--radius) var(--radius) 0;font-size:.84rem;margin:.5rem 0 .8rem;color:#1a4a4c}
+
+/* --- TESTING TABLE --- */
+.test-table{width:100%;border-collapse:collapse;font-size:.84rem;margin:.75rem 0}
+.test-table th{text-align:left;padding:.55rem .65rem;background:var(--accent);color:#fff;font-weight:600}
+.test-table td{padding:.5rem .65rem;border-bottom:1px solid var(--border);vertical-align:top}
+.test-table tr:last-child td{border-bottom:none}
+.test-table code{font-size:.76rem}
+
+/* --- TROUBLESHOOT --- */
+.trouble{font-size:.85rem;margin:.5rem 0}
+.trouble dt{font-weight:600;color:var(--warn);margin-top:.6rem}
+.trouble dd{margin:0 0 0 1rem;color:var(--muted)}
+
+/* --- DELIVERABLES --- */
+.deliverables{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.6rem;margin:.75rem 0}
+.del{display:flex;align-items:flex-start;gap:.5rem;background:var(--accent-light);padding:.7rem .85rem;border-radius:var(--radius);font-size:.84rem}
+.del-num{font-weight:800;color:var(--accent);font-size:.9rem}
+
+/* --- FOOTER --- */
+.footer{text-align:center;padding:2rem 1rem;font-size:.78rem;color:var(--muted);border-top:1px solid var(--border);margin-top:2rem}
+
+/* --- RESPONSIVE --- */
+@media(max-width:600px){
+  .hero{padding:2.5rem 1.25rem 2rem}
+  .hero h1{font-size:1.4rem}
+  .hero-meta{flex-direction:column;gap:.4rem}
+  .features{grid-template-columns:1fr}
+  .deliverables{grid-template-columns:1fr}
+  pre{font-size:.72rem;padding:.65rem .75rem}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
 </head>
-<body class="bg-slate-50">
-    <div class="flex min-h-screen">
-        <!-- Sidebar -->
-        <div class="w-72 bg-white border-r border-slate-200 h-screen overflow-y-auto fixed">
-            <div class="p-8 border-b">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-emerald-600 text-white rounded-3xl flex items-center justify-center text-3xl">🌱</div>
-                    <div>
-                        <div class="heading text-3xl font-semibold tracking-tighter text-slate-900">Jagruti</div>
-                        <div class="text-emerald-600 text-xs font-medium -mt-1">SLACK AGENT</div>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4">
-                <a href="#overview" class="nav-link block px-6 py-3.5 rounded-2xl text-slate-600 text-sm font-medium">Overview</a>
-                <a href="#prerequisites" class="nav-link block px-6 py-3.5 rounded-2xl text-slate-600 text-sm font-medium">Prerequisites</a>
-                <a href="#phase3" class="nav-link block px-6 py-3.5 rounded-2xl text-slate-600 text-sm font-medium">Phase 3 - Daily Logging + RTS</a>
-                <a href="#phase4" class="nav-link block px-6 py-3.5 rounded-2xl text-slate-600 text-sm font-medium">Phase 4 - Critical Detection</a>
-                <a href="#phase5" class="nav-link block px-6 py-3.5 rounded-2xl text-slate-600 text-sm font-medium">Phase 5 - Clinical Reports</a>
-                <a href="#phase6" class="nav-link block px-6 py-3.5 rounded-2xl text-slate-600 text-sm font-medium">Phase 6 - Testing</a>
-                <a href="#troubleshooting" class="nav-link block px-6 py-3.5 rounded-2xl text-slate-600 text-sm font-medium">Troubleshooting</a>
-                <a href="#deliverables" class="nav-link block px-6 py-3.5 rounded-2xl text-slate-600 text-sm font-medium">Final Deliverables</a>
-            </div>
-        </div>
+<body>
 
-        <!-- Main Content -->
-        <div class="flex-1 ml-72 p-12 max-w-4xl">
-            <div class="status inline-flex items-center gap-2 text-xs font-medium px-5 h-7 rounded-3xl mb-6">
-                <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                FULLY EXECUTABLE • JUNE 21, 2026
-            </div>
+<header class="hero">
+  <span class="hero-badge">Hackathon Build Guide</span>
+  <h1>Jagruti Slack Agent<br>Implementation Plan</h1>
+  <p>A step-by-step execution guide for interns and freshers — every phase, every command, every config explained.</p>
+  <div class="hero-meta">
+    <span>📅 June 21, 2026</span>
+    <span>🏗️ Slack-First + RTS Architecture</span>
+    <span>🎯 Phases 3 – 6 Detailed</span>
+  </div>
+</header>
 
-            <h1 class="heading text-6xl font-semibold tracking-tighter text-slate-900 mb-3">Jagruti Slack Agent</h1>
-            <p class="text-xl text-slate-600">Complete Implementation Plan with Real-Time Search (RTS) and Slack MCP Server Integration</p>
+<main class="container">
 
-            <div class="h-px bg-slate-200 my-12"></div>
+  <!-- HOW TO READ -->
+  <div class="callout">
+    <strong>How to Read This Document</strong>
+    <ol>
+      <li>Read <strong>one phase at a time</strong>. Don't try everything in one day.</li>
+      <li>Every command has explanation above it — read the <em>why</em> first.</li>
+      <li>"WHY" = business/technical reason. "WHAT IF SKIPPED" = the risk.</li>
+      <li>After each phase, reply <strong>"Phase X completed"</strong>.</li>
+      <li>Ask questions freely — this project is designed to teach you.</li>
+    </ol>
+  </div>
 
-            <!-- Full Content from MD -->
-            <div class="prose prose-slate max-w-none text-[15.5px] leading-relaxed">
-                <h2 id="overview" class="heading text-4xl font-semibold text-slate-800 mt-12">Project Overview</h2>
-                <p>This Slack agent turns Slack into the main communication and data collection tool for frontline nutrition workers in the Jagruti program.</p>
-                <p><strong>WHY:</strong> Field workers in rural areas often find complex mobile apps difficult. They already use messaging apps daily. By making Slack the primary interface and using Slack's native Agent Builder, we remove friction and create a native Slack experience. This dramatically increases data collection frequency and quality while aligning with the demo's emphasis on Slack AI capabilities.</p>
+  <!-- OVERVIEW -->
+  <section class="overview">
+    <h2>Why We're Building This</h2>
+    <p>This Slack agent turns Slack into the primary communication and data-collection tool for frontline nutrition workers in the <strong>Jagruti program</strong>.</p>
+    <p>Field workers in rural areas find complex mobile apps difficult — but they already use messaging apps daily. By making Slack the interface via native Agent Builder, we remove friction and boost data quality.</p>
 
-                <h3 class="text-2xl font-semibold mt-10">Key Features</h3>
-                <ul class="list-none space-y-4">
-                    <li><strong>Daily prompts</strong> for field workers to log experiences. WHY: Consistent daily input creates reliable longitudinal data about children.</li>
-                    <li><strong>All data stored directly in Salesforce</strong> (no custom database). WHY: Jagruti already has a Salesforce org. Duplicating data creates sync problems. Salesforce is the single source of truth.</li>
-                    <li><strong>Automatic detection of critically malnourished children.</strong> WHY: Early detection can save lives. The system should proactively find high-risk cases.</li>
-                    <li><strong>AI-powered clinical reports with Real-Time Search (RTS).</strong> WHY: Raw notes are turned into professional medical summaries. RTS ensures the agent always has the freshest workspace context.</li>
-                    <li><strong>Clean Slack Canvas reports using native Slack surfaces.</strong> WHY: Canvas gives beautiful, formatted, permanent records inside Slack.</li>
-                </ul>
+    <div class="features">
+      <div class="feat"><strong>Daily Prompts</strong>Field workers log observations consistently, building reliable longitudinal data.</div>
+      <div class="feat"><strong>Salesforce as Truth</strong>All data stored directly in the existing Salesforce org — no sync problems.</div>
+      <div class="feat"><strong>Critical Case Detection</strong>Automatic identification of severely malnourished children for early intervention.</div>
+      <div class="feat"><strong>AI Clinical Reports</strong>Raw notes → professional medical summaries via Claude + WHO criteria.</div>
+      <div class="feat"><strong>Real-Time Search (RTS)</strong>Agent always pulls the freshest workspace context before any action.</div>
+      <div class="feat"><strong>Slack Canvas Reports</strong>Beautiful, formatted, permanent records inside native Slack surfaces.</div>
+    </div>
 
-                <h3 class="text-2xl font-semibold mt-10">Current Architecture (Slack-First)</h3>
-                <p>- Single source of truth = Salesforce Developer Org<br>
-                - Communication & Agent Layer = Slack Agent Builder + Bolt + Native Surfaces (split-view, Canvas, suggested prompts, streaming)<br>
-                - Bridge = Salesforce MCP + Slack MCP Server (both used together)<br>
-                - Real-Time Search (RTS) = Core capability to pull fresh in-workspace context instantly<br>
-                - Clinical Reasoning = Claude (used selectively for medical accuracy)<br>
-                - Automation = Slack workflows, Bolt scheduled jobs (native Slack tools preferred)</p>
+    <h2 style="margin-top:1.25rem">Architecture</h2>
+    <div class="arch">
+      <span>Salesforce Dev Org</span>
+      <span>Slack Agent Builder + Bolt</span>
+      <span>Salesforce MCP</span>
+      <span>Slack MCP Server</span>
+      <span>RTS Layer</span>
+      <span>Claude (clinical)</span>
+      <span>Workflow Builder</span>
+    </div>
+  </section>
 
-                <h2 id="prerequisites" class="heading text-4xl font-semibold text-slate-800 mt-20">Prerequisites</h2>
-                <p>Follow the installation steps exactly as written in the previous version of this document. All commands have been tested and are production-ready.</p>
+  <!-- PHASE 3 -->
+  <details class="phase" open>
+    <summary><span class="phase-num">3</span>Daily Experience Logging + Real-Time Search</summary>
+    <div class="phase-body">
 
-                <h2 id="phase3" class="heading text-4xl font-semibold text-slate-800 mt-20">Phase 3: Daily Experience Logging + Real-Time Search (RTS)</h2>
-                <h3 class="text-xl font-semibold mt-8">Step 3.1: Create the dedicated channel</h3>
-                <p>In Slack: Go to Browse channels → Create channel → Name: <code>field-worker-experiences</code> → Set to Public.</p>
-                <p><strong>Why:</strong> All field observations will live in one searchable place. This makes RTS much more effective.</p>
+      <h3>Step 3.1 — Create the Dedicated Channel</h3>
+      <p>In Slack: Browse channels → Create channel → name it <code>field-worker-experiences</code> → set to Public.</p>
+      <div class="why">All field observations live in one searchable place. This makes RTS far more effective.</div>
 
-                <h3 class="text-xl font-semibold mt-8">Step 3.2: Set up Daily Prompt using Native Slack Tools</h3>
-                <p>Use Workflow Builder with scheduled trigger at 9:00 AM daily with this exact message:</p>
-                <pre><code>Good morning team! 🌱
+      <h3>Step 3.2 — Set Up Daily Prompt (No Code)</h3>
+      <p>Use Slack's native <strong>Automation → Workflow Builder</strong>:</p>
+      <ol>
+        <li>Create Workflow → select <strong>Scheduled</strong> trigger → every day at 9:00 AM</li>
+        <li>Add action <strong>"Send a message"</strong> to <code>#field-worker-experiences</code></li>
+        <li>Paste the prompt message (below) → Save → Publish</li>
+      </ol>
+<pre>Good morning team! 🌱
 
 Please share today's field observations about the children you visited.
 Examples:
@@ -96,98 +184,302 @@ Examples:
 • Feeding practices observed
 • Any photos or voice notes
 
-Just reply in this channel. Your input helps us detect critical cases early.</code></pre>
+Just reply in this channel. Your input helps us detect critical cases early.</pre>
+      <div class="why">Native Workflow Builder aligns with the demo's emphasis on Slack AI capabilities — no external cron needed.</div>
 
-                <h3 class="text-xl font-semibold mt-8">Step 3.3: Create Real-Time Search (RTS) Helper</h3>
-                <pre><code class="language-python"># rts_helper.py - Real-Time Search (RTS) for Jagruti Agent
+      <h3>Step 3.3 — Create Real-Time Search (RTS) Helper</h3>
+      <p>Create file <code>rts_helper.py</code>:</p>
+<pre><span style="color:var(--muted)"># rts_helper.py - Real-Time Search (RTS) for Jagruti Agent</span>
 from datetime import datetime
 
 def real_time_search(query: str = "nutrition OR SAM OR stunting OR feeding", limit: int = 15):
+    """
+    Pulls freshest context from Slack + Salesforce before any major action.
+    """
     results = []
-    slack_results = slack_mcp.call(tool="search_messages", params={"query": query, "channels": ["field-worker-experiences", "critical-cases"], "time_range": "last_7_days", "limit": limit})
+
+    <span style="color:var(--muted)"># Slack MCP Server — search recent messages</span>
+    slack_results = slack_mcp.call(
+        tool="search_messages",
+        params={
+            "query": query,
+            "channels": ["field-worker-experiences", "critical-cases"],
+            "time_range": "last_7_days",
+            "limit": limit
+        }
+    )
     results.extend(slack_results)
-    salesforce_results = salesforce_mcp.call(tool="query", params={"soql": f"SELECT Id, Narrative__c, Worker_Name__c, Date__c FROM Experience_Log__c WHERE Date__c = LAST_N_DAYS:7 ORDER BY Date__c DESC LIMIT {limit}"})
+
+    <span style="color:var(--muted)"># Salesforce MCP — latest structured data</span>
+    salesforce_results = salesforce_mcp.call(
+        tool="query",
+        params={
+            "soql": f"""
+                SELECT Id, Narrative__c, Worker_Name__c, Date__c
+                FROM Experience_Log__c
+                WHERE Date__c = LAST_N_DAYS:7
+                ORDER BY Date__c DESC LIMIT {limit}
+            """
+        }
+    )
     results.extend(salesforce_results)
+
     results = sorted(results, key=lambda x: x.get('timestamp', ''), reverse=True)
     print(f"RTS completed at {datetime.now()}. Found {len(results)} recent items.")
     return results[:limit]
 
+
 if __name__ == "__main__":
     fresh_context = real_time_search("SAM OR malnourished", limit=10)
-    print("RTS Output:", fresh_context)</code></pre>
+    print("RTS Output:", fresh_context)</pre>
 
-                <h2 id="phase4" class="heading text-4xl font-semibold text-slate-800 mt-20">Phase 4: Critical Case Detection & Alerts (Full Executable)</h2>
-                <p>Create file <code>critical_case_detector.py</code> with this complete code:</p>
-                <pre><code class="language-python"># critical_case_detector.py
+      <p>Test with:</p>
+<pre>python3 rts_helper.py</pre>
+
+      <h3>Step 3.4 — Integrate RTS into the Agent</h3>
+      <p>Call RTS <strong>before</strong> any major action in your main app:</p>
+<pre>@app.command("/generate-report")
+def generate_report(ack, say):
+    ack()
+    context = real_time_search("child nutrition observations", limit=12)
+    <span style="color:var(--muted)"># Then use 'context' for report generation</span></pre>
+      <div class="why">RTS makes the agent "live" — it always has the latest observations the moment they're needed.</div>
+
+    </div>
+  </details>
+
+  <!-- PHASE 4 -->
+  <details class="phase">
+    <summary><span class="phase-num">4</span>Critical Case Detection &amp; Alerts</summary>
+    <div class="phase-body">
+
+      <h3>Step 4.1 — Main Detection Script</h3>
+      <p>Create <code>critical_case_detector.py</code>:</p>
+<pre><span style="color:var(--muted)"># critical_case_detector.py</span>
 from datetime import datetime
 from rts_helper import real_time_search
 
 def detect_critical_cases():
-    fresh_context = real_time_search("SAM OR severely malnourished OR critical OR urgent", limit=20)
-    high_risk = salesforce_mcp.call(tool="query", params={"soql": "SELECT ... WHERE SAM_Score__c >= 2 ..."})
-    if not high_risk: return
-    clinical_summary = claude.call(system_prompt="You are an experienced pediatric nutritionist...", user_message=f"Latest data: {fresh_context + high_risk}")
-    slack_mcp.call(tool="send_message", params={"channel": "critical-cases", "text": "🚨 Critical Cases Detected", "blocks": [...]})
-    slack_mcp.call(tool="create_canvas", params={"title": "Critical Cases Report", "content": clinical_summary})
-    print("Alert posted.")
+    print(f"Starting critical case detection at {datetime.now()}")
+
+    <span style="color:var(--muted)"># Step 1: RTS for unstructured signals</span>
+    fresh_context = real_time_search(
+        query="SAM OR severely malnourished OR critical OR urgent",
+        limit=20
+    )
+
+    <span style="color:var(--muted)"># Step 2: Salesforce query for structured high-risk children</span>
+    high_risk = salesforce_mcp.call(
+        tool="query",
+        params={
+            "soql": """
+                SELECT Id, Name, SAM_Score__c, Stunted__c, Wasted__c,
+                       Guardian_Name__c, Location__c
+                FROM Child__c
+                WHERE SAM_Score__c >= 2
+                   OR Stunted__c = true
+                   OR Wasted__c = true
+                ORDER BY SAM_Score__c DESC
+                LIMIT 10
+            """
+        }
+    )
+
+    if not high_risk:
+        print("No critical cases found today.")
+        return
+
+    <span style="color:var(--muted)"># Step 3: Clinical summary from Claude</span>
+    clinical_summary = claude.call(
+        system_prompt="You are an experienced pediatric nutritionist...",
+        user_message=f"Critical cases and observations: {fresh_context + high_risk}"
+    )
+
+    <span style="color:var(--muted)"># Step 4: Rich alert via Slack MCP</span>
+    slack_mcp.call(
+        tool="send_message",
+        params={
+            "channel": "critical-cases",
+            "text": f"🚨 {len(high_risk)} Critical Cases - {datetime.now():%Y-%m-%d}",
+            "blocks": [
+                {"type": "header",
+                 "text": {"type": "plain_text", "text": "Critical Nutrition Alert"}},
+                {"type": "section",
+                 "text": {"type": "mrkdwn", "text": clinical_summary}}
+            ]
+        }
+    )
+
+    <span style="color:var(--muted)"># Step 5: Persistent Canvas report</span>
+    slack_mcp.call(
+        tool="create_canvas",
+        params={
+            "title": f"Critical Cases Report - {datetime.now():%Y-%m-%d}",
+            "content": clinical_summary,
+            "channel": "critical-cases"
+        }
+    )
+    print("Critical case alert posted successfully.")
+
 
 if __name__ == "__main__":
-    detect_critical_cases()</code></pre>
+    detect_critical_cases()</pre>
 
-                <h2 id="phase5" class="heading text-4xl font-semibold text-slate-800 mt-20">Phase 5: AI Clinical Report Generation (Full Executable)</h2>
-                <p>Create file <code>clinical_report_generator.py</code>:</p>
-                <pre><code class="language-python"># clinical_report_generator.py
+      <h3>Step 4.2 — Test &amp; Schedule</h3>
+<pre>python3 critical_case_detector.py</pre>
+      <p>Check <code>#critical-cases</code> for the alert and Canvas. Use Workflow Builder or a Bolt scheduled job to run daily at 8 AM.</p>
+
+    </div>
+  </details>
+
+  <!-- PHASE 5 -->
+  <details class="phase">
+    <summary><span class="phase-num">5</span>AI Clinical Report Generation</summary>
+    <div class="phase-body">
+
+      <h3>Step 5.1 — Report Generator Script</h3>
+      <p>Create <code>clinical_report_generator.py</code>:</p>
+<pre><span style="color:var(--muted)"># clinical_report_generator.py</span>
 from datetime import datetime
 from rts_helper import real_time_search
 
 def generate_clinical_report():
-    context = real_time_search("child nutrition OR SAM", limit=20)
-    system_prompt = "You are an experienced pediatric nutritionist working in rural India with 15+ years experience. ... (full 6-section prompt as per MD)"
-    report = claude.call(system_prompt=system_prompt, user_message=f"Latest observations:\n{context}")
-    slack_mcp.call(tool="send_message", params={"channel": "reports", "text": "Clinical Report Ready", "blocks": [...]})
-    slack_mcp.call(tool="create_canvas", params={"title": f"Clinical Report - {datetime.now()}", "content": report})
-    print("Report generated.")
+    print(f"Generating clinical report at {datetime.now()}")
+
+    <span style="color:var(--muted)"># Step 1: RTS (mandatory for freshness)</span>
+    context = real_time_search(
+        query="child nutrition OR SAM OR feeding OR stunting OR wasting",
+        limit=20
+    )
+
+    <span style="color:var(--muted)"># Step 2: Claude with strict clinical prompt</span>
+    system_prompt = """
+You are an experienced pediatric nutritionist working in rural India
+with 15+ years experience.
+
+Analyze the field worker observations. Structure your response EXACTLY:
+
+1. **Executive Summary** (2-3 sentences)
+2. **Key Themes Identified** (bullet points)
+3. **Children Requiring Urgent Attention** (with WHO criteria)
+4. **Recommended Counselling Topics** (with justification)
+5. **Suggested Mother Education Content** (video ideas)
+6. **Overall Program Recommendations**
+
+Use WHO standards for SAM, Stunting, and Wasting.
+Be compassionate but clinically precise.
+"""
+
+    report = claude.call(
+        system_prompt=system_prompt,
+        user_message=f"Latest observations:\n{context}"
+    )
+
+    <span style="color:var(--muted)"># Step 3: Deliver via Slack MCP (rich message + Canvas)</span>
+    slack_mcp.call(
+        tool="send_message",
+        params={
+            "channel": "reports",
+            "text": "📊 Clinical Report Generated",
+            "blocks": [
+                {"type": "header",
+                 "text": {"type": "plain_text", "text": "Jagruti Clinical Summary"}},
+                {"type": "section",
+                 "text": {"type": "mrkdwn", "text": report}}
+            ]
+        }
+    )
+
+    canvas = slack_mcp.call(
+        tool="create_canvas",
+        params={
+            "title": f"Jagruti Clinical Report - {datetime.now():%Y-%m-%d}",
+            "content": report,
+            "channel": "reports"
+        }
+    )
+
+    print(f"Report posted. Canvas URL: {canvas.get('url', 'N/A')}")
+    return report
+
+
 if __name__ == "__main__":
-    generate_clinical_report()</code></pre>
+    generate_clinical_report()</pre>
 
-                <h2 id="phase6" class="heading text-4xl font-semibold text-slate-800 mt-20">Phase 6: Testing Checklist (Full Executable)</h2>
-                <ol class="list-decimal pl-6 space-y-6 text-[15.2px]">
-                    <li><strong>Test 1: MCP Servers</strong><br><code>slack mcp test salesforce</code> and <code>slack mcp test slack</code></li>
-                    <li><strong>Test 2: RTS</strong><br><code>python3 rts_helper.py</code></li>
-                    <li><strong>Test 3: Daily Prompt</strong> - Verify Workflow Builder message in #field-worker-experiences</li>
-                    <li><strong>Test 4: Critical Case Detection</strong><br><code>python3 critical_case_detector.py</code></li>
-                    <li><strong>Test 5: Clinical Report</strong><br><code>python3 clinical_report_generator.py</code></li>
-                    <li><strong>Test 6: End-to-End</strong> - Post test message, run detectors, verify Salesforce records</li>
-                </ol>
+      <h3>Step 5.2 — Test</h3>
+<pre>python3 clinical_report_generator.py</pre>
+      <p>Check <code>#reports</code> for the rich message and Canvas with all 6 sections.</p>
+      <div class="why">Uses RTS before Claude, delivers via native Slack surfaces (Canvas + blocks), and maintains a strict prompt for consistent clinical output.</div>
 
-                <h2 id="troubleshooting" class="heading text-4xl font-semibold text-slate-800 mt-20">Troubleshooting Guide</h2>
-                <p>- RTS returns no results → Check channel names and time_range in rts_helper.py<br>
-                - Slack MCP fails → Verify tokens and run `slack mcp test slack`<br>
-                - Claude prompt not followed → Make system_prompt exactly as shown (copy-paste)<br>
-                - Canvas not created → Ensure Slack MCP has correct permissions in manifest</p>
-
-                <h2 id="deliverables" class="heading text-4xl font-semibold text-slate-800 mt-20">Final Deliverables for Hackathon</h2>
-                <ol class="list-decimal pl-6 space-y-3">
-                    <li>Native Slack Agent with Agent Builder surfaces</li>
-                    <li>Working RTS capability in Phases 3, 4, and 5</li>
-                    <li>Daily prompts via Workflow Builder</li>
-                    <li>Critical case alerts with Canvas</li>
-                    <li>Clinical reports using RTS + Claude + Slack MCP</li>
-                    <li>90-second demo video showing live RTS and native Slack behavior</li>
-                </ol>
-
-                <div class="mt-20 py-12 border-t border-slate-200 text-center text-slate-400 text-sm">
-                    Jagruti Slack Agent • Complete Implementation Plan<br>
-                    Every single word from JAGRUTI-IMPLEMENTATION-PLAN-EXPLAINED-FOR-INTERNS.md is included here.<br>
-                    Built as index.html for https://santoshprolocity.github.io/jagruti-slack-agent/
-                </div>
-            </div>
-        </div>
     </div>
+  </details>
 
-    <script>
-        tailwind.config = {};
-        Prism.highlightAll();
-    </script>
+  <!-- PHASE 6 -->
+  <details class="phase">
+    <summary><span class="phase-num">6</span>Testing Checklist</summary>
+    <div class="phase-body">
+
+      <p>Run these tests in order. All commands are provided.</p>
+
+      <table class="test-table">
+        <thead><tr><th>#</th><th>Test</th><th>Command / Action</th><th>Expected Result</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>MCP Servers</td><td><code>slack mcp test salesforce</code><br><code>slack mcp test slack</code></td><td>Both return "Connection successful"</td></tr>
+          <tr><td>2</td><td>RTS</td><td><code>python3 rts_helper.py</code></td><td>Prints recent items with timestamps</td></tr>
+          <tr><td>3</td><td>Daily Prompt</td><td>Trigger Workflow Builder manually</td><td>Message appears in <code>#field-worker-experiences</code></td></tr>
+          <tr><td>4</td><td>Critical Detection</td><td><code>python3 critical_case_detector.py</code></td><td>Alert + Canvas in <code>#critical-cases</code></td></tr>
+          <tr><td>5</td><td>Clinical Report</td><td><code>python3 clinical_report_generator.py</code></td><td>Rich message + Canvas in <code>#reports</code></td></tr>
+          <tr><td>6</td><td>End-to-End Flow</td><td>Post test message → run detector → run report → check Salesforce</td><td>New <code>Experience_Log__c</code> records</td></tr>
+          <tr><td>7</td><td>Native Agent Features</td><td>Check Slack UI</td><td>Suggested prompts + split-view / Canvas</td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </details>
+
+  <!-- TROUBLESHOOTING -->
+  <details class="phase">
+    <summary><span class="phase-num">?</span>Troubleshooting Guide</summary>
+    <div class="phase-body">
+      <dl class="trouble">
+        <dt>RTS returns no results</dt>
+        <dd>Check channel names and <code>time_range</code> in <code>rts_helper.py</code></dd>
+        <dt>Slack MCP fails</dt>
+        <dd>Verify tokens and run <code>slack mcp test slack</code></dd>
+        <dt>Claude prompt not followed</dt>
+        <dd>Make <code>system_prompt</code> exactly as shown — copy-paste it</dd>
+        <dt>Canvas not created</dt>
+        <dd>Ensure Slack MCP has correct permissions in your app manifest</dd>
+        <dt>No alerts</dt>
+        <dd>Check if the <code>high_risk</code> SOQL query returns data in Salesforce</dd>
+      </dl>
+      <div class="why" style="margin-top:1rem"><strong>Getting Help:</strong> Ask something specific like "Debug RTS in Phase 3" or "Why is my Canvas not appearing in Phase 5?"</div>
+    </div>
+  </details>
+
+  <!-- DELIVERABLES -->
+  <section class="overview" style="margin-top:1.5rem">
+    <h2>Final Hackathon Deliverables</h2>
+    <div class="deliverables">
+      <div class="del"><span class="del-num">1</span>Native Slack Agent with Agent Builder surfaces</div>
+      <div class="del"><span class="del-num">2</span>Working RTS capability across Phases 3, 4, and 5</div>
+      <div class="del"><span class="del-num">3</span>Daily prompts via Workflow Builder</div>
+      <div class="del"><span class="del-num">4</span>Critical case alerts with Canvas reports</div>
+      <div class="del"><span class="del-num">5</span>Clinical reports using RTS + Claude + Slack MCP</div>
+      <div class="del"><span class="del-num">6</span>90-second demo video showing live RTS and native Slack behavior</div>
+    </div>
+  </section>
+
+  <div class="callout" style="margin-top:1.5rem;background:var(--accent-light);border-left-color:var(--accent)">
+    <strong style="color:var(--accent)">Next Step</strong><br>
+    Start with Phase 0, then move to Phase 3. After each phase reply <strong>"Phase X completed"</strong> and you'll receive any missing code files. Good luck — this project has strong potential to win <em>"Slack Agent for Good"</em>.
+  </div>
+
+</main>
+
+<footer class="footer">
+  Jagruti Slack Agent — Implementation Plan for Interns &amp; Freshers · v1.0 · June 2026
+</footer>
+
 </body>
 </html>
