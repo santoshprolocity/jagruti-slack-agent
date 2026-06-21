@@ -2,7 +2,7 @@
 # JAGRUTI SLACK AGENT - IMPLEMENTATION PLAN EXPLAINED FOR INTERNS & FRESHERS
 
 This document takes the original plan and adds **extensive explanations** for every line.
-It is written assuming you have never done Slack bots, Salesforce MCP, or Claude integration before.
+It is written assuming you have never done Slack bots, Salesforce MCP, or AI integration before.
 
 ## SECTION 0: PROJECT OVERVIEW - WHY THIS PROJECT EXISTS
 
@@ -10,9 +10,9 @@ It is written assuming you have never done Slack bots, Salesforce MCP, or Claude
 # WHY: Field workers (usually in villages) find it hard to use complicated apps. Everyone already uses WhatsApp/Slack.
 # By making Slack the main tool, workers can just chat instead of filling complex forms. This increases data collection rate.
 
-# Line: Key Features include daily prompts, data stored in Salesforce, automatic detection of malnourished children, AI reports by Claude
+# Line: Key Features include daily prompts, data stored in Salesforce, automatic detection of malnourished children, AI reports
 # WHY: The goal is NOT just to collect data. The real goal is to help real children who are malnourished.
-# Daily prompts = consistent data. Salesforce = organization already uses it. Claude AI = turns raw observations into professional clinical reports.
+# Daily prompts = consistent data. Salesforce = organization already uses it.  AI = turns raw observations into professional clinical reports.
 # This combination (Slack + Salesforce + AI) is very powerful and impressive for a hackathon.
 
 # Line: Current Architecture: Single source of truth = Salesforce, Communication = Slack (Bolt Python), Bridge = Salesforce Hosted MCP
