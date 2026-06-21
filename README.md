@@ -4,8 +4,6 @@
 This document takes the original plan and adds **extensive explanations** for every line.
 It is written assuming you have never done Slack bots, Salesforce MCP, or Claude integration before.
 
-Read slowly. If anything is still confusing, highlight the line and ask Hermes "explain this line in even simpler words".
-
 ## SECTION 0: PROJECT OVERVIEW - WHY THIS PROJECT EXISTS
 
 # Line: This Slack agent turns Slack into the main communication and data collection tool for frontline nutrition workers in the Jagruti program.
