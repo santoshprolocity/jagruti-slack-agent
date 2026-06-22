@@ -115,7 +115,7 @@ p code,.phase-body li code{background:var(--code-bg);padding:.1rem .35rem;border
   <div class="hero-meta">
     <span>📅 June 21, 2026</span>
     <span>🏗️ Slack-First + RTS Architecture</span>
-    <span>🎯 Phases 3 – 6 Detailed</span>
+    <span>🎯 Phases 0 – 6 Complete</span>
   </div>
 </header>
 
@@ -160,8 +160,126 @@ p code,.phase-body li code{background:var(--code-bg);padding:.1rem .35rem;border
     </div>
   </section>
 
-  <!-- PHASE 3 -->
+  <!-- PREREQUISITES -->
   <details class="phase" open>
+    <summary><span class="phase-num" style="background:var(--warn)">P</span>Prerequisites — Foundation Setup</summary>
+    <div class="phase-body">
+
+      <h3>1. Install Required Tools</h3>
+<pre><span style="color:var(--muted)"># Refresh package list and upgrade all installed software</span>
+sudo apt update && sudo apt upgrade -y
+
+<span style="color:var(--muted)"># Add official Node.js 20 repo (required by Slack CLI + MCP Server)</span>
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+<span style="color:var(--muted)"># Install Slack CLI — used to create, edit, and deploy Slack Agents</span>
+npm install -g @slack/cli
+
+<span style="color:var(--muted)"># Python toolchain for Bolt-based backend</span>
+sudo apt install -y python3 python3-pip python3-venv
+pip3 install fastapi uvicorn pydantic requests python-dotenv
+
+<span style="color:var(--muted)"># Verify everything installed correctly</span>
+node --version
+slack --version
+python3 --version</pre>
+
+      <h3>2. Accounts &amp; Keys You Need</h3>
+      <ul>
+        <li><strong>Salesforce Developer Org</strong> — with data already migrated</li>
+        <li><strong>Slack Workspace</strong> — preferably a test workspace</li>
+        <li><strong>Anthropic Account</strong> — Claude API key (used only for clinical reasoning)</li>
+      </ul>
+
+      <h3>3. Create Project Folder</h3>
+<pre>cd /home/admin/Santosh/Projects
+mkdir -p jagruti
+cd jagruti</pre>
+      <div class="why">Complete all prerequisites before starting any phase. Missing tools or keys will block you later.</div>
+
+    </div>
+  </details>
+
+  <!-- PHASE 0 -->
+  <details class="phase">
+    <summary><span class="phase-num">0</span>Salesforce Setup (Most Critical Phase)</summary>
+    <div class="phase-body">
+
+      <p>This phase establishes the data foundation everything else depends on. Three things must be verified:</p>
+      <ol>
+        <li><strong>Activate MCP Server</strong> — enables the Salesforce MCP bridge so the Slack agent can query and write Salesforce data.</li>
+        <li><strong>Create External Client App</strong> — with the correct OAuth scopes for API access (at minimum: <code>api</code>, <code>refresh_token</code>, <code>offline_access</code>).</li>
+        <li><strong>Verify Custom Objects Exist</strong> — confirm <code>Child__c</code>, <code>Experience_Log__c</code>, and all referenced fields are present in the org.</li>
+      </ol>
+      <div class="why">Salesforce is the single source of truth. If this phase is incomplete, every subsequent phase will fail — RTS returns empty, critical detection finds nothing, and reports have no data.</div>
+
+    </div>
+  </details>
+
+  <!-- PHASE 1 -->
+  <details class="phase">
+    <summary><span class="phase-num">1</span>Create Slack App Using Agent Builder</summary>
+    <div class="phase-body">
+
+      <h3>Step 1.1 — Scaffold the Agent</h3>
+<pre>cd /home/admin/Santosh/Projects/jagruti
+slack create jagruti-agent --template agent
+cd jagruti-agent
+slack manifest edit</pre>
+
+      <h3>Step 1.2 — Update Manifest</h3>
+      <p>Enable these capabilities in the manifest:</p>
+      <ul>
+        <li><strong>App Home</strong> — gives the agent a dedicated tab in Slack</li>
+        <li><strong>Slash Commands</strong> — e.g. <code>/generate-report</code>, <code>/detect-critical</code></li>
+        <li><strong>Canvas Support</strong> — allows the agent to create persistent formatted documents</li>
+      </ul>
+
+      <h3>Step 1.3 — Deploy</h3>
+<pre>slack deploy</pre>
+      <div class="why">The Slack Agent is the user-facing layer. Agent Builder gives us native surfaces (split-view, suggested prompts, streaming) that feel first-class inside Slack.</div>
+
+    </div>
+  </details>
+
+  <!-- PHASE 2 -->
+  <details class="phase">
+    <summary><span class="phase-num">2</span>Configure Both MCP Servers (Salesforce + Slack)</summary>
+    <div class="phase-body">
+
+      <h3>Step 2.1 — Create Config File</h3>
+      <p>This single config connects both MCP servers the agent depends on:</p>
+<pre>cat > config.yaml << 'EOF'
+mcp_servers:
+  salesforce:
+    url: "https://your-org.my.salesforce.com/services/mcp"
+    auth:
+      type: "oauth"
+      client_id: "YOUR_SALESFORCE_CLIENT_ID"
+      client_secret: "YOUR_SALESFORCE_CLIENT_SECRET"
+      refresh_token: "YOUR_REFRESH_TOKEN"
+    timeout: 120
+
+  slack:
+    command: "npx"
+    args: ["-y", "@slack/mcp-server"]
+    env:
+      SLACK_BOT_TOKEN: "xoxb-..."
+      SLACK_APP_TOKEN: "xapp-..."
+EOF</pre>
+
+      <h3>Step 2.2 — Test Both Connections</h3>
+<pre>slack mcp test salesforce
+slack mcp test slack</pre>
+      <p>Expected: Both return <strong>"Connection successful"</strong>.</p>
+      <div class="why"><strong>Salesforce MCP</strong> handles structured child data (queries, writes). <strong>Slack MCP Server</strong> handles real-time workspace search, Canvas creation, and native messaging. Both are needed together.</div>
+
+    </div>
+  </details>
+
+  <!-- PHASE 3 -->
+  <details class="phase">
     <summary><span class="phase-num">3</span>Daily Experience Logging + Real-Time Search</summary>
     <div class="phase-body">
 
